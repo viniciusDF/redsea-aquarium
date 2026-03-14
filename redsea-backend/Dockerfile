@@ -1,12 +1,20 @@
-FROM eclipse-temurin:17-jdk
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
-COPY . .
+COPY redsea-backend/pom.xml .
+RUN mvn -B -q -e -DskipTests dependency:go-offline
 
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+COPY redsea-backend/src ./src
+
+RUN mvn package -DskipTests
+
+FROM eclipse-temurin:21-jdk
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-CMD ["java","-jar","target/RedSea250-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
